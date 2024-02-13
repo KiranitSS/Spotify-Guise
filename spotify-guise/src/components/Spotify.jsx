@@ -1,11 +1,35 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import Body from "./Body";
 import Footer from "./Footer";
+import { useStateProvider } from "../utils/StateProvider";
+import axios from "axios";
+import { reducerCases } from "../utils/constants";
 
 export default function Spotify() {
+    const [{ token }, dispatch] = useStateProvider();
+
+    useEffect(() => {
+        const getUserInfo = async () => {
+            const { data } = await axios.get("https://api.spotify.com/v1/me", {
+                headers: {
+                    Authorization: "Bearer " + token,
+                    "Content-type": "application/json",
+                },
+            });
+
+            if (token) {
+                const userInfo = {
+                    userId: data.id,
+                    userName: data.display_name,
+                };
+                dispatch({ type: reducerCases.SET_USER, userInfo });
+            }
+        }
+        getUserInfo();
+    }, [dispatch, token]);
     return (
         <Container>
             <div className="spotify_body">
@@ -36,7 +60,7 @@ grid-template-rows: 85vh 15vh;
         width: 100%;
         height: 100%;
         background: linear-gradient(transparent, black);
-        background-color: #1ed760;
+        background-color: #1ebe57;
     }
     .body {
         width: 100%;
