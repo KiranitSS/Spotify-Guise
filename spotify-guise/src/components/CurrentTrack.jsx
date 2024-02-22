@@ -15,7 +15,6 @@ export default function CurrentTrack() {
                     "Content-type": "application/json",
                 }
             });
-            console.log(response);
             if (response.data !== "") {
                 const { item } = response.data;
                 const currentlyPlaying = {
@@ -24,7 +23,6 @@ export default function CurrentTrack() {
                     artists: item.artists.map((artist) => artist.name),
                     image: item.album.images[2].url,
                 };
-                console.log(currentlyPlaying);
                 dispatch({ type: reducerCases.SET_PLAYING, currentlyPlaying });
             }
         }

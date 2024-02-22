@@ -1,12 +1,21 @@
-import React, { useEffect} from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { AiFillClockCircle } from "react-icons/ai";
 import { useStateProvider } from "../utils/StateProvider";
 import axios from "axios";
 import { reducerCases } from "../utils/constants";
 
-export default function Body({headerBackground}) {
+export default function Body({ headerBackground }) {
     const [{ token, selectedPlaylistId, selectedPlaylist }, dispatch] = useStateProvider();
+    const isAccountPremium = async () => {
+        const response = await axios.get("https://api.spotify.com/v1/me", {
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-type": "application/json",
+            }
+        });
+        return response.data.product === "premium";
+    }
 
     useEffect(() => {
         const getInitialPlaylist = async () => {
@@ -36,11 +45,43 @@ export default function Body({headerBackground}) {
         }
         getInitialPlaylist();
     }, [token, dispatch, selectedPlaylistId])
-const msToMinutesAndSeconds = (ms) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(0);
-    return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
+    const msToMinutesAndSeconds = (ms) => {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = ((ms % 60000) / 1000).toFixed(0);
+        return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    };
+
+    const playTrack = async (id, name, artists, image, context_uri, track_number) => {
+        if(await isAccountPremium()){
+            const response = await axios.put(`https://api.spotify.com/v1/me/player/play`,
+            {
+                context_uri,
+                offset: {
+                    position: track_number - 1
+                },
+                position_ms: 0,
+            },
+            {
+                headers: {
+                    Authorization: "Bearer " + token,
+                    "Content-type": "application/json",
+                }
+            },
+        );
+        if(response.status === 204) {
+            const currentPlaying = {
+                id,
+                name, 
+                artists,
+                image,
+            };
+            dispatch({type: reducerCases.SET_PLAYING, currentPlaying});
+            dispatch({type: reducerCases.SET_PLAYER_STATE, playerState: true});
+        } else { dispatch({type: reducerCases.SET_PLAYER_STATE, playerState: true});}
+        }
+
+    };
+
     return (
         <Container headerBackground={headerBackground}>
             {
@@ -86,7 +127,7 @@ const msToMinutesAndSeconds = (ms) => {
                                         track_number,
                                     }, index) => {
                                         return (
-                                            <div className="row" key={id}>
+                                            <div className="row" key={id} onClick={() => playTrack(id, name, artists, image, context_uri, track_number)}>
                                                 <div className="col">
                                                     <span>{index + 1}</span>
                                                 </div>
